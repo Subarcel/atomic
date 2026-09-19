@@ -1,6 +1,20 @@
 Atomic-x86
 ==========
 
+============================================================
+                         STATUS
+============================================================
+
+This project is currently incomplete and is not under active
+development. Development has been temporarily placed on hold
+and may resume at a later date.
+
+The current version should be considered a work in progress
+and may contain incomplete features or functionality.
+
+============================================================
+
+
 This is the source for mini-kernel (also called atomic-x86), a small x86
 operating system kernel written in C and NASM assembly. I built this as a
 experiment for my first old PC to exp with low-level systems programming.
