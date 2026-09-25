@@ -1,20 +1,6 @@
 Atomic-x86
 ==========
 
-============================================================
-                         STATUS
-============================================================
-
-This project is currently incomplete and is not under active
-development. Development has been temporarily placed on hold
-and may resume at a later date.
-
-The current version should be considered a work in progress
-and may contain incomplete features or functionality.
-
-============================================================
-
-
 This is the source for mini-kernel (also called atomic-x86), a small x86
 operating system kernel written in C and NASM assembly. I built this as a
 experiment for my first old PC to exp with low-level systems programming.
@@ -31,21 +17,33 @@ mini-kernel boots via GRUB (Multiboot 1), enters 32-bit protected mode,
 and sets up a complete foundational kernel layer:
 
   Boot    - GRUB multiboot header, stack setup, ISR/IRQ assembly stubs
+  
   CPU     - GDT flat model, IDT with 256 gates, exception + hardware IRQ dispatch
+  
   Drivers - VGA text output, PS/2 keyboard (IRQ 1), PS/2 mouse (IRQ 12),
             PIT timer at 100 Hz (IRQ 0), serial port (COM1), ATA disk (PIO)
+            
   Memory  - Bitmap physical frame allocator, identity-mapped paging, kernel heap
+  
   Library - memset/memcpy/strcmp/strncmp, kprintf with %c %s %d %u %x %p,
             port I/O inlines, random number generator
+            
   Shell   - Interactive command interface - help, mem, uptime, echo, color,
             version, reboot, panic_test, pci, date, shutdown, trace, dev,
             loopback, ata, mouse
+            
   PCI     - Scans the PCI bus and lists all devices found
+  
   Time    - Reads the real-time clock (RTC) from CMOS, tracks uptime
+  
   Block   - Generic block device layer so disk drivers all look the same
+  
   DevFS   - Device files under /dev like null, zero, random, ata0, ttyS0
+  
   ACPI    - Reads the ACPI tables and can shut down the computer properly
+  
   Net     - Loopback network interface for testing packets
+  
   Debug   - Stack trace dump (ktrace) and assert macros
 
 The kernel is entirely interrupt-driven after init. After boot it drops into
@@ -56,51 +54,66 @@ Folder Layout
 
   boot/         - boot.asm (multiboot header, stack, calls kernel_main)
                   kernel_entry.asm (ISR/IRQ assembly stubs)
+                  
   cpu/          - gdt.c, gdt.h, gdt_flush.asm
                   idt.c, idt.h, idt_flush.asm
                   isr.c, isr.h (CPU exceptions 0-31)
                   irq.c, irq.h (PIC remap, hardware IRQs 0-15)
                   syscall_stub.asm (int 0x80 handler)
+                  
   drivers/      - vga.c/h (text mode framebuffer 0xB8000)
                   keyboard.c/h (PS/2 keyboard, IRQ 1)
                   mouse.c/h (PS/2 mouse, IRQ 12)
                   timer.c/h (PIT 8253/8254 at 100 Hz)
                   serial.c/h (COM1 UART at 0x3F8)
                   ata.c/h (ATA primary master, PIO mode LBA28)
+                  
   kernel/       - main.c (init sequence, never returns)
                   kernel.h (types, macros, port I/O, multiboot struct)
                   shell.c/h (interactive command shell)
                   panic.c/h (red screen of death, register dump, halt)
                   cpp_runtime.c/h (C++ global constructor runner)
+                  
   mm/           - pmm.c/h (bitmap physical memory allocator)
                   paging.c/h (identity map + on-demand page mapping)
                   kmalloc.c/h (kernel heap, bump + free list)
+                  
   lib/          - string.c/h (strlen, strcmp, memcpy, memset, strncmp)
                   kprintf.c/h (kernel printf, writes to VGA)
                   rand.c/h (simple LCG random number generator)
+                  
   task/         - scheduler.c/h (round-robin task switching)
                   process.c/h (create and destroy tasks)
                   context_switch.asm (low-level switch helper)
+                  
   fs/           - vfs.c/h (virtual filesystem layer)
                   tmpfs.c/h (ramdisk filesystem)
+                  
   sys/          - syscall.c/h (system call table, int 0x80)
   pci/          - pci.c/h (PCI bus scanner, reads config space)
+  
   time/         - rtc.c/h (CMOS real-time clock reader)
                   timekeeper.c/h (tracks boot time and uptime)
+                  
   block/        - block.c/h (generic block device abstraction)
+  
   dev/          - devfs.c/h (device files: /dev/null, /dev/zero, etc)
+  
   acpi/         - acpi.c/h (ACPI RSDP parser, shutdown support)
+  
   net/          - netif.c/h (network interface layer)
                   loopback.c/h (loopback interface for testing)
                   ethernet.h (Ethernet frame header)
+                  
   debug/        - ktrace.c/h (stack trace unwinder)
                   assert.h (ASSERT and ASSERT_MSG macros)
+                  
   scripts/      - build_iso.sh (makes a bootable ISO with GRUB)
 
 Prerequisites
 -------------
 
-Ubuntu / Debian:
+### Ubuntu / Debian:
 
   sudo apt update
   sudo apt install -y \
@@ -112,9 +125,9 @@ Ubuntu / Debian:
       xorriso \
       mtools
 
-  # If your Makefile uses i686-elf-gcc, change it to i686-linux-gnu-gcc
+  ***If your Makefile uses i686-elf-gcc, change it to i686-linux-gnu-gcc***
 
-macOS (Homebrew):
+### macOS (Homebrew):
 
   brew install i686-elf-gcc i686-elf-binutils nasm qemu xorriso
 
@@ -131,32 +144,33 @@ Building
 
   cd mykernel
 
-  # Compile all sources -&gt; mini-kernel.bin (ELF)
+
+  ### Compile all sources -&gt; mini-kernel.bin (ELF)
   make
 
-  # Wrap in a GRUB-bootable ISO -&gt; mini-kernel.iso
+  ### Wrap in a GRUB-bootable ISO -&gt; mini-kernel.iso
   ./scripts/build_iso.sh
 
-  # Wipe all object files and outputs
+  ### Wipe all object files and outputs
   make clean
 
 
 Running
 -------
 
-  # Build and launch QEMU
+  ### Build and launch QEMU
   make run
 
-  # Run the ISO manually
+  ### Run the ISO manually
   qemu-system-i386 -cdrom mini-kernel.iso
 
-  # Run the raw ELF binary (QEMU acts as bootloader)
+  ### Run the raw ELF binary (QEMU acts as bootloader)
   qemu-system-i386 -kernel mini-kernel.bin
 
-  # With 128 MB RAM and serial output to terminal
+  ### With 128 MB RAM and serial output to terminal
   qemu-system-i386 -cdrom mini-kernel.iso -m 128M -serial stdio
 
-  # With mouse support (for testing the PS/2 mouse driver)
+  ### With mouse support (for testing the PS/2 mouse driver)
   qemu-system-i386 -cdrom mini-kernel.iso -m 128M -serial stdio -usbdevice mouse
 
 Verify the binary before running:
@@ -192,29 +206,30 @@ Useful GDB commands:
 Boot Sequence
 -------------
 
-  1. vga_init()        - console first, so kprintf works
-  2. verify magic      - confirm GRUB handshake
-  3. gdt_init()        - flat segment model
-  4. idt_init()        - 256-gate descriptor table
-  5. isr_init()        - install exception stubs 0-31
-  6. irq_init()        - remap PIC, install IRQ stubs 32-47
-  7. pmm_init(mbi)     - parse GRUB memory map
-  8. paging_init()     - identity map 0-4 MB, enable CR0.PG
-  9. kmalloc_init()    - set up kernel heap at 0x400000
-  10. timer_init(100)  - PIT at 100 Hz
-  11. keyboard_init()  - PS/2 keyboard driver on IRQ 1
-  12. mouse_init()     - PS/2 mouse driver on IRQ 12
-  13. ata_init()       - detect primary master ATA disk
-  14. serial_init()    - setup COM1 serial port
-  15. pci_init()       - scan PCI bus for devices
-  16. timekeeper_init()- read RTC and start uptime counter
-  17. block_init()     - setup block device layer
-  18. devfs_init()     - create /dev/null, /dev/zero, etc
-  19. acpi_init()      - parse ACPI tables for shutdown
-  20. net_init()       - setup loopback network interface
-  21. srand()          - seed random number generator
-  22. sti              - interrupts enabled (last)
-       └─ shell_run()  - interactive shell, never returns
+  1. vga_init()        - console first,
+  2. so kprintf works
+  3. verify magic      - confirm GRUB handshake
+  4. gdt_init()        - flat segment model
+  5. idt_init()        - 256-gate descriptor table
+  6. isr_init()        - install exception stubs 0-31
+  7. irq_init()        - remap PIC, install IRQ stubs 32-47
+  8. pmm_init(mbi)     - parse GRUB memory map
+  9. paging_init()     - identity map 0-4 MB, enable CR0.PG
+  10. kmalloc_init()    - set up kernel heap at 0x400000
+  11. timer_init(100)  - PIT at 100 Hz
+  12. keyboard_init()  - PS/2 keyboard driver on IRQ 1
+  13. mouse_init()     - PS/2 mouse driver on IRQ 12
+  14. ata_init()       - detect primary master ATA disk
+  15. serial_init()    - setup COM1 serial port
+  16. pci_init()       - scan PCI bus for devices
+  17. timekeeper_init()- read RTC and start uptime counter
+  18. block_init()     - setup block device layer
+  19. devfs_init()     - create /dev/null, /dev/zero, etc
+  20. acpi_init()      - parse ACPI tables for shutdown
+  21. net_init()       - setup loopback network interface
+  22. srand()          - seed random number generator
+  23. sti              - interrupts enabled (last)
+        shell_run()  - interactive shell, never returns
 
 
 Memory Layout
